@@ -1,1 +1,2 @@
 # G42-Engagements-Roadmap
+QuarterAffiliateEngagement TitleTypeStatusDescriptionQ1 2025Core42i43 MVPCo-DevCompletedSprint demos for G42 employeesQ2 2025PresightAudio Video AnalyticsAdvisoryCompletedIntel Neosight platform for analyticsQ3 2025Core42Insight AssistCo-DevSprints| Q4 2025   | Inception | Board Navigator Voice Agent            | Advisory      | Sprints    | AI Traffic Mgmt, IntelliPlatform, AIQ applications    |
