@@ -17,7 +17,6 @@ jobs:
             const repo = context.repo.repo;
             const parentIssueNumber = context.payload.issue.number;
 
-            // Fetch parent issue details for labels and assignees
             const parentIssue = await github.rest.issues.get({
               owner,
               repo,
@@ -43,10 +42,12 @@ jobs:
               "Affiliate Dedicated Resources for Co-Dev"
             ];
 
+            let checklist = "### Sub-Issue Checklist\n";
+            const subIssueLinks = [];
+
             async function run() {
               for (const title of subIssueTitles) {
                 try {
-                  // Create sub-issue with inherited labels and assignees
                   const subIssue = await github.rest.issues.create({
                     owner,
                     repo,
@@ -56,9 +57,8 @@ jobs:
                     assignees: parentAssignees
                   });
 
-                  console.log(`Created sub-issue #${subIssue.data.number}`);
+                  subIssueLinks.push(`- [ ] ${title} (#${subIssue.data.number})`);
 
-                  // Link sub-issue to parent
                   await github.request('POST /repos/{owner}/{repo}/issues/{issue_number}/sub-issues', {
                     owner,
                     repo,
@@ -70,14 +70,20 @@ jobs:
                     data: { issue_number: subIssue.data.number }
                   });
 
-                  console.log(`Linked sub-issue #${subIssue.data.number} to parent #${parentIssueNumber}`);
-
-                  // Delay to avoid rate limit
                   await new Promise(resolve => setTimeout(resolve, 1500));
                 } catch (error) {
                   core.setFailed(`Error creating or linking "${title}": ${error.message}`);
                 }
               }
+
+              checklist += subIssueLinks.join("\n");
+
+              await github.rest.issues.update({
+                owner,
+                repo,
+                issue_number: parentIssueNumber,
+                body: `${parentIssue.data.body || ""}\n\n${checklist}`
+              });
             }
 
             run();
