@@ -13,7 +13,7 @@ jobs:
         with:
           github-token: ${{ secrets.GH_PAT }}
           script: |
-            (async () => {
+            try {
               const owner = context.repo.owner;
               const repo = context.repo.repo;
               const parentIssueNumber = context.payload.issue.number;
@@ -34,9 +34,8 @@ jobs:
                 "Affiliate Dedicated Resources for Co-Dev"
               ];
 
-              for (const title of subIssueTitles) {
-                try {
-                  // Create sub-issue
+              (async () => {
+                for (const title of subIssueTitles) {
                   const subIssue = await github.rest.issues.create({
                     owner,
                     repo,
@@ -46,7 +45,6 @@ jobs:
 
                   console.log(`Created sub-issue #${subIssue.data.number}`);
 
-                  // Link sub-issue to parent
                   await github.request('POST /repos/{owner}/{repo}/issues/{issue_number}/sub-issues', {
                     owner,
                     repo,
@@ -59,11 +57,9 @@ jobs:
                   });
 
                   console.log(`Linked sub-issue #${subIssue.data.number} to parent #${parentIssueNumber}`);
-
-                  // Delay to avoid rate limit
                   await new Promise(resolve => setTimeout(resolve, 1500));
-                } catch (error) {
-                  console.error(`Error creating or linking "${title}": ${error.message}`);
                 }
-              }
-            })();
+              })();
+            } catch (error) {
+              core.setFailed(error.message);
+            }
