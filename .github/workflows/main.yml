@@ -11,55 +11,48 @@ jobs:
       - name: Create 13 Sub-Issues
         uses: actions/github-script@v7
         with:
-          github-token: ${{ secrets.GH_PAT }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
-            try {
-              const owner = context.repo.owner;
-              const repo = context.repo.repo;
-              const parentIssueNumber = context.payload.issue.number;
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+            const parentIssueNumber = context.payload.issue.number;
 
-              const subIssueTitles = [
-                "Solution GTM & Tech Owners Identified & Engaged",
-                "Leadership Sponsor Identified",
-                "V-team Including SME Identified & Engaged",
-                "Customer 0,1 has Verified Need",
-                "Customer Personas, Pain Points and Sol Value Prop",
-                "Market Sizing and Growth",
-                "Scalability Potential and Pipeline",
-                "Pricing Strategy Identified",
-                "Rev & ACR Expectations",
-                "Stage 0 GSF Assets",
-                "Ref Architecture, Solution V1 Scope",
-                "Release Plan Defined",
-                "Affiliate Dedicated Resources for Co-Dev"
-              ];
+            const subIssueTitles = [
+              "Solution GTM & Tech Owners Identified & Engaged",
+              "Leadership Sponsor Identified",
+              "V-team Including SME Identified & Engaged",
+              "Customer 0,1 has Verified Need",
+              "Customer Personas, Pain Points and Sol Value Prop",
+              "Market Sizing and Growth",
+              "Scalability Potential and Pipeline",
+              "Pricing Strategy Identified",
+              "Rev & ACR Expectations",
+              "Stage 0 GSF Assets",
+              "Ref Architecture, Solution V1 Scope",
+              "Release Plan Defined",
+              "Affiliate Dedicated Resources for Co-Dev"
+            ];
 
-              (async () => {
-                for (const title of subIssueTitles) {
-                  const subIssue = await github.rest.issues.create({
-                    owner,
-                    repo,
-                    title,
-                    body: `Automatically created sub-issue linked to parent issue #${parentIssueNumber}`
-                  });
+            for (const title of subIssueTitles) {
+              const subIssue = await github.rest.issues.create({
+                owner,
+                repo,
+                title,
+                body: `Automatically created sub-issue linked to parent issue #${parentIssueNumber}`
+              });
 
-                  console.log(`Created sub-issue #${subIssue.data.number}`);
-
-                  await github.request('POST /repos/{owner}/{repo}/issues/{issue_number}/sub-issues', {
-                    owner,
-                    repo,
-                    issue_number: parentIssueNumber,
-                    headers: {
-                      'X-GitHub-Api-Version': '2022-11-28',
-                      'Accept': 'application/vnd.github+json'
-                    },
-                    data: { issue_number: subIssue.data.number }
-                  });
-
-                  console.log(`Linked sub-issue #${subIssue.data.number} to parent #${parentIssueNumber}`);
-                  await new Promise(resolve => setTimeout(resolve, 1500));
+              await github.request('POST /repos/{owner}/{repo}/issues/{issue_number}/sub-issues', {
+                owner,
+                repo,
+                issue_number: parentIssueNumber,
+                headers: {
+                  'X-GitHub-Api-Version': '2022-11-28',
+                  'Accept': 'application/vnd.github+json'
+                },
+                data: {
+                  issue_number: subIssue.data.number
                 }
-              })();
-            } catch (error) {
-              core.setFailed(error.message);
+              });
+
+              console.log(`Linked sub-issue #${subIssue.data.number} to parent #${parentIssueNumber}`);
             }
