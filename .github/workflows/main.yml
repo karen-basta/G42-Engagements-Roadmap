@@ -60,8 +60,3 @@ jobs:
                 console.log(`Linked sub-issue #${subIssue.data.number} to parent #${parentIssueNumber}`);
 
                 // Delay to avoid rate limit
-                await new Promise(resolve => setTimeout(resolve, 1500));
-              } catch (error) {
-                console.error(`Error creating or linking "${title}":`, error.message);
-              }
-            }
