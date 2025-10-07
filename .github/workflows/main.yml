@@ -8,7 +8,7 @@ jobs:
   create-sub-issues:
     runs-on: ubuntu-latest
     steps:
-      - name: Create 13 Sub-Issues
+      - name: Create and Link Sub-Issues
         uses: actions/github-script@v7
         with:
           github-token: ${{ secrets.GH_PAT }}
@@ -16,6 +16,16 @@ jobs:
             const owner = context.repo.owner;
             const repo = context.repo.repo;
             const parentIssueNumber = context.payload.issue.number;
+
+            // Fetch parent issue details for labels and assignees
+            const parentIssue = await github.rest.issues.get({
+              owner,
+              repo,
+              issue_number: parentIssueNumber
+            });
+
+            const parentLabels = parentIssue.data.labels.map(label => label.name);
+            const parentAssignees = parentIssue.data.assignees.map(user => user.login);
 
             const subIssueTitles = [
               "Solution GTM & Tech Owners Identified & Engaged",
@@ -36,15 +46,19 @@ jobs:
             async function run() {
               for (const title of subIssueTitles) {
                 try {
+                  // Create sub-issue with inherited labels and assignees
                   const subIssue = await github.rest.issues.create({
                     owner,
                     repo,
                     title,
-                    body: `Automatically created sub-issue linked to parent issue #${parentIssueNumber}`
+                    body: `Automatically created sub-issue linked to parent issue #${parentIssueNumber}`,
+                    labels: parentLabels,
+                    assignees: parentAssignees
                   });
 
                   console.log(`Created sub-issue #${subIssue.data.number}`);
 
+                  // Link sub-issue to parent
                   await github.request('POST /repos/{owner}/{repo}/issues/{issue_number}/sub-issues', {
                     owner,
                     repo,
@@ -58,7 +72,8 @@ jobs:
 
                   console.log(`Linked sub-issue #${subIssue.data.number} to parent #${parentIssueNumber}`);
 
-                  await new Promise(resolve => setTimeout(resolve, 1500)); // prevent rate limit
+                  // Delay to avoid rate limit
+                  await new Promise(resolve => setTimeout(resolve, 1500));
                 } catch (error) {
                   core.setFailed(`Error creating or linking "${title}": ${error.message}`);
                 }
