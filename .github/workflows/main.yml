@@ -6,13 +6,6 @@ on:
 
 jobs:
   create-sub-issues:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Create 13 Sub-Issues
-        uses: actions/github-script@v7
-        with:
-          github-token: ${{ secrets.GH_PAT }} # Use PAT with repo scope
-          script: |
             const owner = context.repo.owner;
             const repo = context.repo.repo;
             const parentIssueNumber = context.payload.issue.number;
@@ -39,7 +32,7 @@ jobs:
                   owner,
                   repo,
                   title,
-                  body: `Linked to parent issue #${parentIssueNumber}`
+                  body: `Automatically created sub-issue linked to parent issue #${parentIssueNumber}`
                 });
 
                 await github.request('POST /repos/{owner}/{repo}/issues/{issue_number}/sub-issues', {
@@ -53,9 +46,15 @@ jobs:
                   data: { issue_number: subIssue.data.number }
                 });
 
-                console.log(`Created sub-issue #${subIssue.data.number}`);
-                await new Promise(resolve => setTimeout(resolve, 1000)); // avoid rate limit
+                console.log(`Created and linked sub-issue #${subIssue.data.number}`);
+                await new Promise(resolve => setTimeout(resolve, 1000)); // prevent rate limit
               } catch (error) {
                 console.error(`Error creating ${title}:`, error);
               }
-            }
+            }    runs-on: ubuntu-latest
+    steps:
+      - name: Create 13 Sub-Issues
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GH_PAT }}
+          script: |
