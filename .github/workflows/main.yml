@@ -8,7 +8,7 @@ jobs:
   create-sub-issues:
     runs-on: ubuntu-latest
     steps:
-      - name: Create and Link Sub-Issues
+      - name: Create Standard Sub-Issues
         uses: actions/github-script@v7
         with:
           github-token: ${{ secrets.GH_PAT }}
@@ -17,16 +17,16 @@ jobs:
             const repo = context.repo.repo;
             const parentIssueNumber = context.payload.issue.number;
 
+            // Get parent issue labels and assignees
             const parentIssue = await github.rest.issues.get({
               owner,
               repo,
               issue_number: parentIssueNumber
             });
-
             const parentLabels = parentIssue.data.labels.map(label => label.name);
             const parentAssignees = parentIssue.data.assignees.map(user => user.login);
 
-            // BULK SUB-ISSUE TITLES
+            // Sub-issue titles
             const subIssueTitles = [
               "Solution GTM & Tech Owners Identified & Engaged",
               "Leadership Sponsor Identified",
@@ -43,52 +43,24 @@ jobs:
               "Affiliate Dedicated Resources for Co-Dev"
             ];
 
-            // Only update the parent issue body with the checklist. Sub-issues get a simple note.
-            let checklist = "### Sub-Issue Checklist\n";
-            const subIssueLinks = [];
-
             async function run() {
               for (const title of subIssueTitles) {
                 try {
-                  const subIssue = await github.rest.issues.create({
+                  // Create sub-issue, referencing parent
+                  await github.rest.issues.create({
                     owner,
                     repo,
                     title,
-                    // Sub-issue description is simple and does NOT include any checklist.
-                    body: `Automatically created sub-issue linked to parent issue #${parentIssueNumber}`,
+                    body: `Automatically created sub-issue. Parent: #${parentIssueNumber}`,
                     labels: parentLabels,
                     assignees: parentAssignees
                   });
-
-                  subIssueLinks.push(`- [ ] ${title} (#${subIssue.data.number})`);
-
-                  // Link as sub-issue (if your repo/org supports this API)
-                  await github.request('POST /repos/{owner}/{repo}/issues/{issue_number}/sub-issues', {
-                    owner,
-                    repo,
-                    issue_number: parentIssueNumber,
-                    headers: {
-                      'X-GitHub-Api-Version': '2022-11-28',
-                      'Accept': 'application/vnd.github+json'
-                    },
-                    data: { issue_number: subIssue.data.number }
-                  });
-
-                  await new Promise(resolve => setTimeout(resolve, 1500)); // Sleep to avoid API rate limits
+                  await new Promise(resolve => setTimeout(resolve, 1500)); // Rate limit protection
                 } catch (error) {
-                  core.warning(`Error creating or linking "${title}": ${error.message}`);
+                  core.warning(`Error creating "${title}": ${error.message}`);
                 }
               }
-
-              checklist += subIssueLinks.join("\n");
-
-              // Only the parent issue gets the checklist appended.
-              await github.rest.issues.update({
-                owner,
-                repo,
-                issue_number: parentIssueNumber,
-                body: `${parentIssue.data.body || ""}\n\n${checklist}`
-              });
+              // No checklist or parent issue body update!
             }
 
             run();
