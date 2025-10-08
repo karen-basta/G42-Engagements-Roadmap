@@ -26,6 +26,7 @@ jobs:
             const parentLabels = parentIssue.data.labels.map(label => label.name);
             const parentAssignees = parentIssue.data.assignees.map(user => user.login);
 
+            // BULK SUB-ISSUE TITLES
             const subIssueTitles = [
               "Solution GTM & Tech Owners Identified & Engaged",
               "Leadership Sponsor Identified",
@@ -59,6 +60,7 @@ jobs:
 
                   subIssueLinks.push(`- [ ] ${title} (#${subIssue.data.number})`);
 
+                  // Link as sub-issue (if your repo/org supports this API)
                   await github.request('POST /repos/{owner}/{repo}/issues/{issue_number}/sub-issues', {
                     owner,
                     repo,
@@ -70,9 +72,9 @@ jobs:
                     data: { issue_number: subIssue.data.number }
                   });
 
-                  await new Promise(resolve => setTimeout(resolve, 1500));
+                  await new Promise(resolve => setTimeout(resolve, 1500)); // Sleep to avoid API rate limits
                 } catch (error) {
-                  core.setFailed(`Error creating or linking "${title}": ${error.message}`);
+                  core.warning(`Error creating or linking "${title}": ${error.message}`);
                 }
               }
 
