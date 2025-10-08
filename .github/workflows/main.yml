@@ -55,9 +55,13 @@ jobs:
                     labels: parentLabels,
                     assignees: parentAssignees
                   });
-                  await new Promise(resolve => setTimeout(resolve, 5000)); // Increased delay to 5s for rate limit protection
+                  await new Promise(resolve => setTimeout(resolve, 10000)); // Increased delay to 10s for stronger rate limit protection
                 } catch (error) {
-                  core.warning(`Error creating "${title}": ${error.message}`);
+                  if (error.message && error.message.includes('rate limit')) {
+                    console.log("Rate limit reached. Please try again later or contact GitHub support if urgent.");
+                  } else {
+                    core.warning(`Error creating "${title}": ${error.message}`);
+                  }
                 }
               }
             }
