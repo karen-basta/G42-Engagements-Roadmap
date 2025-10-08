@@ -1,14 +1,14 @@
-name: Auto-Create Standard Sub-Issues
+name: Auto-Create Standard Sub-Issues for Co-ideation Group
 
 on:
   issues:
-    types: [opened]
+    types: [opened, labeled]
 
 jobs:
   create-sub-issues:
     runs-on: ubuntu-latest
     steps:
-      - name: Create Standard Sub-Issues
+      - name: Create Standard Sub-Issues for Co-ideation
         uses: actions/github-script@v7
         with:
           github-token: ${{ secrets.GH_PAT }}
@@ -17,50 +17,21 @@ jobs:
             const repo = context.repo.repo;
             const parentIssueNumber = context.payload.issue.number;
 
-            // Get parent issue labels and assignees
+            // Get parent issue info
             const parentIssue = await github.rest.issues.get({
               owner,
               repo,
               issue_number: parentIssueNumber
             });
+
+            // Check if parent issue has "Co-ideation" label
             const parentLabels = parentIssue.data.labels.map(label => label.name);
+            if (!parentLabels.includes("Co-ideation")) {
+              console.log("Issue does not have 'Co-ideation' label. Skipping sub-issue creation.");
+              return;
+            }
+
             const parentAssignees = parentIssue.data.assignees.map(user => user.login);
 
             // Sub-issue titles
-            const subIssueTitles = [
-              "Solution GTM & Tech Owners Identified & Engaged",
-              "Leadership Sponsor Identified",
-              "V-team Including SME Identified & Engaged",
-              "Customer 0,1 has Verified Need",
-              "Customer Personas, Pain Points and Sol Value Prop",
-              "Market Sizing and Growth",
-              "Scalability Potential and Pipeline",
-              "Pricing Strategy Identified",
-              "Rev & ACR Expectations",
-              "Stage 0 GSF Assets",
-              "Ref Architecture, Solution V1 Scope",
-              "Release Plan Defined",
-              "Affiliate Dedicated Resources for Co-Dev"
-            ];
-
-            async function run() {
-              for (const title of subIssueTitles) {
-                try {
-                  // Create sub-issue, referencing parent
-                  await github.rest.issues.create({
-                    owner,
-                    repo,
-                    title,
-                    body: `Automatically created sub-issue. Parent: #${parentIssueNumber}`,
-                    labels: parentLabels,
-                    assignees: parentAssignees
-                  });
-                  await new Promise(resolve => setTimeout(resolve, 1500)); // Rate limit protection
-                } catch (error) {
-                  core.warning(`Error creating "${title}": ${error.message}`);
-                }
-              }
-              // No checklist or parent issue body update!
-            }
-
-            run();
+            const sub
