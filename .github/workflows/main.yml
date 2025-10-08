@@ -43,6 +43,7 @@ jobs:
               "Affiliate Dedicated Resources for Co-Dev"
             ];
 
+            // Only update the parent issue body with the checklist. Sub-issues get a simple note.
             let checklist = "### Sub-Issue Checklist\n";
             const subIssueLinks = [];
 
@@ -53,6 +54,7 @@ jobs:
                     owner,
                     repo,
                     title,
+                    // Sub-issue description is simple and does NOT include any checklist.
                     body: `Automatically created sub-issue linked to parent issue #${parentIssueNumber}`,
                     labels: parentLabels,
                     assignees: parentAssignees
@@ -80,6 +82,7 @@ jobs:
 
               checklist += subIssueLinks.join("\n");
 
+              // Only the parent issue gets the checklist appended.
               await github.rest.issues.update({
                 owner,
                 repo,
