@@ -2,7 +2,7 @@ name: Auto-Create Standard Sub-Issues
 
 on:
   issues:
-    types: [opened, labeled]
+    types: [opened]
 
 jobs:
   create-sub-issues:
@@ -27,7 +27,6 @@ jobs:
             const parentLabels = parentIssue.data.labels.map(label => label.name);
             const parentAssignees = parentIssue.data.assignees.map(user => user.login);
 
-            // Sub-issue titles
             const subIssueTitles = [
               "Solution GTM & Tech Owners Identified & Engaged",
               "Leadership Sponsor Identified",
@@ -47,7 +46,7 @@ jobs:
             async function run() {
               for (const title of subIssueTitles) {
                 try {
-                  await github.rest.issues.create({
+                  const subIssue = await github.rest.issues.create({
                     owner,
                     repo,
                     title,
@@ -55,12 +54,13 @@ jobs:
                     labels: parentLabels,
                     assignees: parentAssignees
                   });
-                  await new Promise(resolve => setTimeout(resolve, 10000)); // Increased delay to 10s for stronger rate limit protection
+                  console.log(`Created sub-issue: ${title} - #${subIssue.data.number}`);
+                  await new Promise(resolve => setTimeout(resolve, 15000)); // 15s delay
                 } catch (error) {
+                  console.log(`Error creating "${title}":`, error.message);
                   if (error.message && error.message.includes('rate limit')) {
-                    console.log("Rate limit reached. Please try again later or contact GitHub support if urgent.");
-                  } else {
-                    core.warning(`Error creating "${title}": ${error.message}`);
+                    console.log("Rate limit reached. Pausing for 1 minute...");
+                    await new Promise(resolve => setTimeout(resolve, 60000)); // Wait 1 minute, then continue
                   }
                 }
               }
