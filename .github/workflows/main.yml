@@ -1,0 +1,36 @@
+name: Cancel All Queued Runs
+
+on:
+  schedule:
+    - cron: "*/30 * * * *" # Runs every 30 minutes
+  workflow_dispatch: # Allow manual trigger
+
+permissions:
+  actions: write
+  contents: read
+
+jobs:
+  cancel-queued:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Cancel Queued Runs
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          OWNER: ${{ github.repository_owner }}
+          REPO: ${{ github.event.repository.name }}
+        run: |
+          echo "Fetching queued runs..."
+          queued_runs=$(curl -s -H "Authorization: token $GITHUB_TOKEN" \
+            -H "Accept: application/vnd.github+json" \
+            "https://api.github.com/repos/$OWNER/$REPO/actions/runs?status=queued" | jq -r '.workflow_runs[].id')
+
+          if [ -z "$queued_runs" ]; then
+            echo "No queued runs found."
+          else
+            for run_id in $queued_runs; do
+              echo "Cancelling run ID: $run_id"
+              curl -X POST -H "Authorization: token $GITHUB_TOKEN" \
+                -H "Accept: application/vnd.github+json" \
+                "https://api.github.com/repos/$OWNER/$REPO/actions/runs/$run_id/cancel"
+            done
+          fi
