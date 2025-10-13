@@ -1,0 +1,68 @@
+name: Duplicate Issue with Sub-Issues
+
+on:
+  workflow_dispatch:
+    inputs:
+      parent_issue_number:
+        description: "Parent issue number to duplicate"
+        required: true
+        type: number
+
+jobs:
+  duplicate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.x'
+
+      - name: Install dependencies
+        run: pip install requests
+
+      - name: Duplicate Issue and Sub-Issues
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          OWNER: "karen-basta"
+          REPO: "G42-Engagements-Roadmap"
+        run: |
+          python <<EOF
+          import requests, os
+
+          token = os.getenv("GITHUB_TOKEN")
+          headers = {"Authorization": f"token {token}", "Accept": "application/vnd.github+json"}
+          owner = os.getenv("OWNER")
+          repo = os.getenv("REPO")
+          parent_issue = int("${{ github.event.inputs.parent_issue_number }}")
+
+          # Fetch parent issue
+          parent = requests.get(f"https://api.github.com/repos/{owner}/{repo}/issues/{parent_issue}", headers=headers).json()
+
+          # Create duplicate parent
+          new_parent = requests.post(f"https://api.github.com/repos/{owner}/{repo}/issues",
+              headers=headers,
+              json={"title": f"[Duplicate] {parent['title']}", "body": parent['body'], "labels": [l['name'] for l in parent['labels']]}
+          ).json()
+          print(f"New parent issue: {new_parent['html_url']}")
+
+          # Fetch linked sub-issues via timeline
+          timeline = requests.get(f"https://api.github.com/repos/{owner}/{repo}/issues/{parent_issue}/timeline", headers=headers).json()
+          sub_issues = [event['subject']['number'] for event in timeline if event.get('event') == 'connected']
+
+          # Duplicate sub-issues
+          for sub_id in sub_issues:
+              sub = requests.get(f"https://api.github.com/repos/{owner}/{repo}/issues/{sub_id}", headers=headers).json()
+              new_sub = requests.post(f"https://api.github.com/repos/{owner}/{repo}/issues",
+                  headers=headers,
+                  json={"title": f"[Duplicate] {sub['title']}", "body": sub['body'], "labels": [l['name'] for l in sub['labels']]}
+              ).json()
+              print(f"Duplicated sub-issue: {new_sub['html_url']}")
+
+              # Link new sub-issue to new parent
+              link_payload = {"target_issue_number": new_sub['number'], "type": "relates_to"}
+              requests.post(f"https://api.github.com/repos/{owner}/{repo}/issues/{new_parent['number']}/links",
+                  headers=headers, json=link_payload)
+          EOF
