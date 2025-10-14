@@ -1,33 +1,13 @@
-name: Create Issue Tree
+import sys
+import yaml
 
-on:
-  workflow_dispatch:
-    inputs:
-      template_file:
-        description: 'Path to template YAML (default: .github/issue-tree-template.yaml)'
-        required: true
-        default: '.github/issue-tree-template.yaml'
+def main(template_path):
+    with open(template_path, "r") as f:
+        data = yaml.safe_load(f)
+    print(data)  # For now, just print. Replace this with GitHub API calls to create issues.
 
-jobs:
-  build:
-    runs-on: ubuntu-latest
-    permissions:
-      issues: write
-      contents: read
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.x'
-
-      - name: Install dependencies
-        run: pip install PyYAML requests
-
-      - name: Run issue tree creator
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          REPO: ${{ github.repository }}
-        run: python .github/scripts/create_issue_tree.py "${{ github.event.inputs.template_file }}"
+if __name__ == "__main__":
+    if len(sys.argv) != 2:
+        print("Usage: python create_issue_tree.py <template_path>")
+        sys.exit(1)
+    main(sys.argv[1])
